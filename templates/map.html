@@ -4,11 +4,13 @@
     <title>ADS-L Live Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+        .marker-icon {
+            transition: all 0.3s ease;
+        }
+    </style>
 </head>
 <body>
-
-
-<!-- part 1 -->
 
 <!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -18,32 +20,65 @@
 <div id="ads-l-map" style="width: 100%; height: 800px;"></div>
 
 <script>
-  // Initialize map
-  var map = L.map('ads-l-map').setView([20, 0], 2); // global view
+    // Initialize map
+    var map = L.map('ads-l-map').setView([20, 0], 2);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-  var markers = {};
+    var markers = {};
+    var aircraftData = {}; // Store aircraft data separately
 
-  function updateMap() {
-    fetch('/ads-l/')  // replace with your Flask endpoint
-      .then(res => res.json())
-      .then(data => {
-        // Remove old markers
+    // Function to calculate icon size based on zoom
+    function getIconSize() {
+        var zoom = map.getZoom();
+        var baseSize = 16;
+        var scaleFactor = Math.pow(1.15, zoom - 2);
+        return Math.max(16, Math.min(48, baseSize * scaleFactor));
+    }
+
+    // Function to create icon with current size and heading
+    function createIcon(heading) {
+        var iconSize = getIconSize();
+        return L.divIcon({
+            html: `<svg fill="#000000" height="64px" width="64px" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="-896 -896 3584.00 3584.00" style="transform: rotate(${heading}deg);"><g stroke-width="0"></g><g stroke-linecap="round" stroke-linejoin="round" stroke="#fcfcfc" stroke-width="258.048"><path d="M187.8,1659L896,132.9L1604.2,1659L896,1285.5L187.8,1659z"></path></g><g><path d="M187.8,1659L896,132.9L1604.2,1659L896,1285.5L187.8,1659z"></path></g></svg>`,
+            className: 'marker-icon',
+            iconSize: [iconSize, iconSize],
+            iconAnchor: [iconSize / 2, iconSize / 2]
+        });
+    }
+
+    // Function to update all marker sizes on zoom
+    function updateMarkerSizes() {
         for (var id in markers) {
-          if (!data.find(d => d.device_id === id)) {
-            map.removeLayer(markers[id]);
-            delete markers[id];
-          }
+            if (aircraftData[id]) {
+                markers[id].setIcon(createIcon(aircraftData[id].heading));
+            }
         }
+    }
 
-        data.forEach(d => {
-          if (d.lat && d.lon) {
-            // Create popup content with all available info
-            var popupContent = `
+    function updateMap() {
+        fetch('/ads-l/')
+            .then(res => res.json())
+            .then(data => {
+                // Remove old markers
+                for (var id in markers) {
+                    if (!data.find(d => d.device_id === id)) {
+                        map.removeLayer(markers[id]);
+                        delete markers[id];
+                        delete aircraftData[id];
+                    }
+                }
+
+                data.forEach(d => {
+                    if (d.lat && d.lon) {
+                        // Store aircraft data
+                        aircraftData[d.device_id] = d;
+
+                        // Create popup content
+                        var popupContent = `
               <b>Aircraft:</b> ${d.aircraft_type}<br>
               <b>Device ID:</b> ${d.device_id}<br>
               <b>Lat/Lon:</b> ${d.lat.toFixed(6)} / ${d.lon.toFixed(6)}<br>
@@ -57,69 +92,65 @@
               <div style="max-width:300px; white-space: pre-wrap; word-break: break-word;"><b>RAW APRS data:</b> ${d.raw || '-'}</div>
             `;
 
-            if (markers[d.device_id]) {
-              // Update existing marker
-              markers[d.device_id].setLatLng([d.lat, d.lon]).setPopupContent(popupContent);
-            } else {
-              // Add new marker
-              var markerIcon = L.divIcon({
-                html: `<svg fill="#000000" height="64px" width="64px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-896 -896 3584.00 3584.00" xml:space="preserve" stroke="#000000" stroke-width="0.01792" style="transform: rotate(${d.heading}deg);"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#fcfcfc" stroke-width="258.048"> <path d="M187.8,1659L896,132.9L1604.2,1659L896,1285.5L187.8,1659z"></path> </g><g id="SVGRepo_iconCarrier"> <path d="M187.8,1659L896,132.9L1604.2,1659L896,1285.5L187.8,1659z"></path> </g></svg>`,                className: 'marker-icon',
-                iconSize: [24, 24],
-                iconAnchor: [12, 12]
-              });
+                        if (markers[d.device_id]) {
+                            // Update existing marker
+                            markers[d.device_id]
+                                .setLatLng([d.lat, d.lon])
+                                .setIcon(createIcon(d.heading))
+                                .setPopupContent(popupContent);
+                        } else {
+                            // Add new marker
+                            markers[d.device_id] = L.marker([d.lat, d.lon], {icon: createIcon(d.heading)})
+                                .addTo(map)
+                                .bindPopup(popupContent);
+                        }
+                    }
+                });
+            })
+            .catch(err => console.error("ADS-L fetch error:", err));
+    }
 
-              markers[d.device_id] = L.marker([d.lat, d.lon], {icon: markerIcon})
-                .addTo(map)
-                .bindPopup(popupContent);
-            }
-          }
-        });
-      })
-      .catch(err => console.error("ADS-L fetch error:", err));
-  }
+    // Initial load
+    updateMap();
+    // Auto-update every 5 seconds
+    setInterval(updateMap, 5000);
 
-  // Initial load
-  updateMap();
-  // Auto-update every 5 seconds
-  setInterval(updateMap, 5000);
+    // Update marker sizes on zoom - THIS MAKES IT DYNAMIC
+    map.on('zoomend', function() {
+        updateMarkerSizes();
+    });
 </script>
-
-
-<!-- part 2 -->
 
 <h3>ADS-L monthly stats</h3>
 <table id="adsl-stats" border="1" style="border-collapse: collapse; width: 300px;">
     <thead>
-        <tr>
-            <th>Month</th>
-            <th>Devices</th>
-        </tr>
+    <tr>
+        <th>Month</th>
+        <th>Devices</th>
+    </tr>
     </thead>
     <tbody></tbody>
 </table>
 
 <script>
-fetch('/ads-l/stats')
-  .then(resp => resp.json())
-  .then(data => {
-      const tbody = document.querySelector('#adsl-stats tbody');
-      tbody.innerHTML = '';
-      data.forEach(row => {
-          const tr = document.createElement('tr');
-          const monthTd = document.createElement('td');
-          monthTd.textContent = row.month;
-          const devicesTd = document.createElement('td');
-          devicesTd.textContent = row.devices;
-          tr.appendChild(monthTd);
-          tr.appendChild(devicesTd);
-          tbody.appendChild(tr);
-      });
-  })
-  .catch(err => console.error(err));
+    fetch('/ads-l/stats')
+        .then(resp => resp.json())
+        .then(data => {
+            const tbody = document.querySelector('#adsl-stats tbody');
+            tbody.innerHTML = '';
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                const monthTd = document.createElement('td');
+                monthTd.textContent = row.month;
+                const devicesTd = document.createElement('td');
+                devicesTd.textContent = row.devices;
+                tr.appendChild(monthTd);
+                tr.appendChild(devicesTd);
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(err => console.error(err));
 </script>
-
-
 
 </body>
 </html>
-
