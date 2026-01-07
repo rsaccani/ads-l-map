@@ -49,18 +49,18 @@
     function getScaleFactor() {
         var zoom = map.getZoom();
         var baseZoom = 5;
-        var scaleFactor = Math.pow(1.2, zoom - baseZoom);
-        return Math.max(0.7, Math.min(2.5, scaleFactor));
+        var scaleFactor = Math.pow(1.15, zoom - baseZoom);
+        return Math.max(0.7, Math.min(1.8, scaleFactor));
     }
 
     // Function to create icon with current size and heading
     function createIcon(heading) {
         var baseSize = 32;
         return L.divIcon({
-            html: `<div style="width: ${baseSize}px; height: ${baseSize}px; transform-origin: center center; display: flex; align-items: center; justify-content: center;"><svg fill="#000000" width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="-896 -896 3584.00 3584.00" style="transform: rotate(${heading}deg); transform-origin: center center; display: block;"><g stroke-width="0"></g><g stroke-linecap="round" stroke-linejoin="round" stroke="#fcfcfc" stroke-width="258.048"><path d="M187.8,1659L896,132.9L1604.2,1659L896,1285.5L187.8,1659z"></path></g><g><path d="M187.8,1659L896,132.9L1604.2,1659L896,1285.5L187.8,1659z"></path></g></svg></div>`,
+            html: `<div style="width: ${baseSize}px; height: ${baseSize}px; transform-origin: center center; display: flex; align-items: center; justify-content: center;"><svg fill="#000000" width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="transform: rotate(${heading}deg); transform-origin: center center; display: block;"><path d="M50 5 L70 85 L50 75 L30 85 Z" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/></svg></div>`,
             className: 'marker-icon',
             iconSize: [baseSize, baseSize],
-            iconAnchor: [baseSize / 2, baseSize * 0.4]
+            iconAnchor: [baseSize / 2, baseSize / 2]
         });
     }
 
