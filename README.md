@@ -4,6 +4,17 @@ This is a simple Flask application for displaying a map of ADS-L devices worldwi
 
 Data is taken from OGN: https://www.glidernet.org/
 
+## About ADS-L
+
+ADS-L (Automatic Dependent Surveillance – Light) is a tracking system designed for light aircraft, ultralights, paragliders, drones and general aviation operating in non-controlled airspace and inside U-Space. It allows these aircraft to broadcast their position and status, improving situational awareness and safety.
+
+## Project Overview
+
+This project connects to the OSN APRS data feed and extracts ADS-L transmitters. The goal is to track the adoption of ADS-L technology over time by monitoring active devices worldwide.
+
+At the top of the page, a live map shows all active ADS-L devices around the world in real time. Below the map, a table lists the number of unique devices observed each month, providing historical adoption trends.
+
+
 ## API Endpoints
 
 ### `/ads-l-map`
