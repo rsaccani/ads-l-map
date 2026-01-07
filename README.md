@@ -93,3 +93,15 @@ python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
+
+Database table for monthly statistics (can be disabled by setting SKIP_STATS_DATABASE to True)
+```sql
+CREATE TABLE `monthly_devices` (
+  `month` char(7) NOT NULL,
+  `device_id` varchar(16) NOT NULL,
+  `device_type` enum('ADSL','ADSB','FLARM','OTHER') NOT NULL,
+  `first_seen` datetime NOT NULL,
+  PRIMARY KEY (`month`,`device_id`),
+  KEY `idx_month_type` (`month`,`device_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+```
