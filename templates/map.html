@@ -49,8 +49,8 @@
     function getScaleFactor() {
         var zoom = map.getZoom();
         var baseZoom = 5;
-        var scaleFactor = Math.pow(1.15, zoom - baseZoom);
-        return Math.max(0.7, Math.min(1.8, scaleFactor));
+        var scaleFactor = Math.pow(1.1, zoom - baseZoom);
+        return Math.max(0.7, Math.min(1.4, scaleFactor));
     }
 
     // Function to create icon with current size and heading
