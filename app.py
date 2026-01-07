@@ -12,7 +12,10 @@ import requests
 import io
 from io import StringIO
 import atexit
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 
 HOST = "aprs.glidernet.org"
 PORT = 14580
@@ -81,8 +84,8 @@ def get_db_connection(max_retries=30, retry_delay=10):
         try:
             conn = pymysql.connect(
                 host="localhost",
-                user="ads_user",
-                password="mfj1278_ads",
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASSWORD"),
                 database="ads_l",
                 autocommit=True
             )

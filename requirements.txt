@@ -6,3 +6,4 @@ datetime
 logging
 pymysql
 requests
+python-dotenv
