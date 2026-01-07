@@ -34,9 +34,9 @@
     // Function to calculate icon size based on zoom
     function getIconSize() {
         var zoom = map.getZoom();
-        var baseSize = 16;
-        var scaleFactor = Math.pow(1.15, zoom - 2);
-        return Math.max(16, Math.min(48, baseSize * scaleFactor));
+        var baseSize = 24;
+        var scaleFactor = Math.pow(1.2, zoom - 2);
+        return Math.max(24, Math.min(64, baseSize * scaleFactor));
     }
 
     // Function to create icon with current size and heading
