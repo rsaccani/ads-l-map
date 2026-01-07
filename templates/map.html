@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ADS-L Live Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+
+
+<!-- part 1 -->
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<div id="ads-l-map" style="width: 100%; height: 800px;"></div>
+
+<script>
+  // Initialize map
+  var map = L.map('ads-l-map').setView([20, 0], 2); // global view
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  var markers = {};
+
+  function updateMap() {
+    fetch('/ads-l/')  // replace with your Flask endpoint
+      .then(res => res.json())
+      .then(data => {
+        // Remove old markers
+        for (var id in markers) {
+          if (!data.find(d => d.device_id === id)) {
+            map.removeLayer(markers[id]);
+            delete markers[id];
+          }
+        }
+
+        data.forEach(d => {
+          if (d.lat && d.lon) {
+            // Create popup content with all available info
+            var popupContent = `
+              <b>Aircraft:</b> ${d.aircraft_type}<br>
+              <b>Device ID:</b> ${d.device_id}<br>
+              <b>Lat/Lon:</b> ${d.lat.toFixed(6)} / ${d.lon.toFixed(6)}<br>
+              <b>Altitude:</b> ${d.altitude !== null ? d.altitude + ' ft (' + (d.altitude * 0.3048).toFixed(0) + ' m)' : '-'}<br>
+              <b>Heading/Speed:</b> ${d.heading} / ${d.speed !== null ? d.speed + ' kts (' + (d.speed * 1.852).toFixed(2) + ' km/h)' : '-'}<br>
+              <b>Vertical Speed:</b> ${d.vspeed !== null ? d.vspeed + ' fpm (' + (d.vspeed * 0.00508).toFixed(2) + ' m/s)' : '-'}<br>
+              <b>GPS fix:</b> ${d.gps_fix || '-'}<br>
+              <b>Routing info:</b> ${d.routing_info}<br>
+              <b>Station/Signal:</b> ${d.station} / ${d.signal || '-'}<br>
+              <b>Timestamp:</b> ${d.timestamp}
+              <div style="max-width:300px; white-space: pre-wrap; word-break: break-word;"><b>RAW APRS data:</b> ${d.raw || '-'}</div> 
+            `;
+
+            if (markers[d.device_id]) {
+              // Update existing marker
+              markers[d.device_id].setLatLng([d.lat, d.lon]).setPopupContent(popupContent);
+            } else {
+              // Add new marker
+              markers[d.device_id] = L.marker([d.lat, d.lon])
+                .addTo(map)
+                .bindPopup(popupContent);
+            }
+          }
+        });
+      })
+      .catch(err => console.error("ADS-L fetch error:", err));
+  }
+
+  // Initial load
+  updateMap();
+  // Auto-update every 5 seconds
+  setInterval(updateMap, 5000);
+</script>
+
+
+<!-- part 2 -->
+
+<h3>ADS-L monthly stats</h3>
+<table id="adsl-stats" border="1" style="border-collapse: collapse; width: 300px;">
+    <thead>
+        <tr>
+            <th>Month</th>
+            <th>Devices</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script>
+fetch('/ads-l/stats')
+  .then(resp => resp.json())
+  .then(data => {
+      const tbody = document.querySelector('#adsl-stats tbody');
+      tbody.innerHTML = '';
+      data.forEach(row => {
+          const tr = document.createElement('tr');
+          const monthTd = document.createElement('td');
+          monthTd.textContent = row.month;
+          const devicesTd = document.createElement('td');
+          devicesTd.textContent = row.devices;
+          tr.appendChild(monthTd);
+          tr.appendChild(devicesTd);
+          tbody.appendChild(tr);
+      });
+  })
+  .catch(err => console.error(err));
+</script>
+
+
+
+</body>
+</html>
+
