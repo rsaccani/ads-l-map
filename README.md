@@ -8,12 +8,79 @@ Data is taken from OGN: https://www.glidernet.org/
 
 ADS-L (Automatic Dependent Surveillance – Light) is a tracking system designed for light aircraft, ultralights, paragliders, drones and general aviation operating in non-controlled airspace and inside U-Space. It allows these aircraft to broadcast their position and status, improving situational awareness and safety.
 
-## Project Overview
+## Project vision
 
-This project connects to the OSN APRS data feed and extracts ADS-L transmitters. The goal is to track the adoption of ADS-L technology over time by monitoring active devices worldwide.
+The ADS-L Live Map project aims to provide real-time visibility into the global adoption of ADS-L technology across various aviation segments. By visualizing active devices on an interactive map and tracking historical trends, this project serves as both a monitoring tool for aviation safety and a research resource for understanding ADS-L adoption patterns.
 
-At the top of the page, a live map shows all active ADS-L devices around the world in real time. Below the map, a table lists the number of unique devices observed each month, providing historical adoption trends.
+## Key features
 
+- Real-time Tracking: Monitor active ADS-L devices worldwide in real time
+- Historical Analytics: View monthly adoption trends through unique device counts
+- Detailed Information: Access comprehensive aircraft data including position, altitude, speed, and more
+- Interactive Interface: Zoomable map with dynamic marker scaling for better visualization
+- Device Identification: Cross-reference with OGN device database for aircraft model information
+
+## Data sources
+
+This application connects to the Open Glider Network (OGN) APRS data feed, which provides real-time telemetry from ADS-L equipped aircraft worldwide. The device type mapping is sourced from the OGN device database.
+
+## Technical architecture
+
+The application follows a microservice-like architecture with:
+- A Flask web server handling HTTP requests
+- A persistent TCP connection to the OGN APRS feed
+- Background threads for data processing and periodic updates
+- Optional MySQL database integration for historical statistics
+
+## Performance considerations
+
+- The application maintains an in-memory cache of active devices
+- Old devices (inactive for >60 minutes) are automatically pruned
+- Device type mapping is refreshed hourly from the OGN database
+- The map interface uses client-side rendering for smooth zooming and panning
+
+## Security
+
+- The application implements proper connection handling with TCP keepalive
+- Database connections are secured with environment variables
+- All external requests are properly validated and error-handled
+
+## Contributing
+
+Contributions to improve the ADS-L Live Map are welcome! Please:
+- Fork the repository
+- Create a feature branch
+- Submit a pull request with clear documentation
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Contact
+
+For questions or feedback, please open an issue in the GitHub repository.
+
+## Screenshots
+
+![img.png](img.png)
+
+## Live deployment
+
+Visit: https://www.saccani.net/ads-l-real-time-monitoring/
+
+## System Requirements
+
+- Python 3.12+
+- MySQL 5.7+ (optional, for statistics)
+- Sufficient memory to handle thousands of concurrent device records (100Mb+)
+- Sufficient bandwidth to handle the data feed in busy days (6-700 Kbps)
+
+## Metrics
+
+The application tracks:
+- Number of active devices in the last 60 minutes
+- Total unique devices observed per month
+- Device distribution by type and region
 
 ## API Endpoints
 
@@ -50,6 +117,14 @@ At the top of the page, a live map shows all active ADS-L devices around the wor
 4. **Device Information**:
     - Access `http://localhost:5000/device-map` to view the device type mapping
 
+
+## Local environment configuration
+
+Local secrets are stored in the .env file in the project folder. This file must be created before running the program
+```
+DB_USER=database_uer
+DB_PASSWORD=database_password
+```
 
 ## Running for Testing
 
@@ -90,7 +165,7 @@ sudo systemctl enable ads-l-map.service
 sudo systemctl start ads-l-map.service
 ```
 
-## Requirements
+## Python Requirements
 
 Install the required packages using:
 
@@ -116,3 +191,12 @@ CREATE TABLE `monthly_devices` (
   KEY `idx_month_type` (`month`,`device_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
 ```
+
+## Acknowledgements
+
+Special thanks to:
+- Open Glider Network for providing the data feed
+- Contributors to the OGN device database
+- EASA and all the people involved in the ADS-L specification
+- Europe-Air-Sports (EAS) and European Hang-Gliding and Paragliding Union (EHPU)
+- The aviation community for adopting ADS-L technology
