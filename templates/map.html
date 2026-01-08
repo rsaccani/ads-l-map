@@ -5,18 +5,23 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <style>
+        .leaflet-div-icon {
+            background: transparent !important;
+            border: none !important;
+        }
         .marker-icon {
             margin: 0 !important;
             padding: 0 !important;
-        }
-        .marker-icon div {
-            transition: transform 0.3s ease;
-            transform-origin: center center;
-            margin: 0;
-            padding: 0;
+            overflow: visible !important;
+            line-height: 0 !important;
+            font-size: 0 !important;
         }
         .marker-icon svg {
             transform-origin: center center;
+            display: block;
+            margin: 0;
+            padding: 0;
+            line-height: 0;
         }
     </style>
 </head>
@@ -56,30 +61,28 @@
     // Function to create icon with current size and heading
     function createIcon(heading) {
         var baseSize = 32;
+        var scale = getScaleFactor();
+        var scaledSize = Math.round(baseSize * scale);
         return L.divIcon({
-            html: `<div style="width: ${baseSize}px; height: ${baseSize}px; transform-origin: center center; display: flex; align-items: center; justify-content: center;"><svg fill="#000000" width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="transform: rotate(${heading}deg); transform-origin: center center; display: block;"><path d="M50 5 L70 85 L50 75 L30 85 Z" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/></svg></div>`,
-            className: 'marker-icon',
-            iconSize: [baseSize, baseSize],
-            iconAnchor: [baseSize / 2, baseSize / 2]
+            html: `<svg fill="#000000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: ${scaledSize}px; height: ${scaledSize}px; transform: rotate(${heading}deg); display: block;"><path d="M50 5 L70 85 L50 75 L30 85 Z" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/></svg>`,
+            className: '',
+            iconSize: [scaledSize, scaledSize],
+            iconAnchor: [Math.round(scaledSize / 2), Math.round(scaledSize / 2)],
+            popupAnchor: [0, -Math.round(scaledSize / 2) - 5]
         });
     }
 
     // Function to update all marker sizes on zoom
     function updateMarkerSizes() {
-        var scale = getScaleFactor();
-        console.log('Updating marker scale for zoom:', map.getZoom(), 'scale:', scale);
+        console.log('Updating marker scale for zoom:', map.getZoom());
 
         for (var id in markers) {
             if (aircraftData[id]) {
                 var marker = markers[id];
-                var icon = marker._icon;
+                var heading = aircraftData[id].heading || 0;
 
-                if (icon) {
-                    var innerDiv = icon.querySelector('div');
-                    if (innerDiv) {
-                        innerDiv.style.transform = 'scale(' + scale + ')';
-                    }
-                }
+                // Recreate icon with new size based on current zoom
+                marker.setIcon(createIcon(heading));
             }
         }
     }
@@ -127,33 +130,11 @@
                                 .setLatLng([d.lat, d.lon])
                                 .setIcon(createIcon(d.heading))
                                 .setPopupContent(popupContent);
-
-                            // Apply current scale immediately
-                            setTimeout(() => {
-                                var icon = markers[d.device_id]._icon;
-                                if (icon) {
-                                    var innerDiv = icon.querySelector('div');
-                                    if (innerDiv) {
-                                        innerDiv.style.transform = 'scale(' + getScaleFactor() + ')';
-                                    }
-                                }
-                            }, 0);
                         } else {
                             // Add new marker
                             markers[d.device_id] = L.marker([d.lat, d.lon], {icon: createIcon(d.heading)})
                                 .addTo(map)
                                 .bindPopup(popupContent);
-
-                            // Apply current scale immediately
-                            setTimeout(() => {
-                                var icon = markers[d.device_id]._icon;
-                                if (icon) {
-                                    var innerDiv = icon.querySelector('div');
-                                    if (innerDiv) {
-                                        innerDiv.style.transform = 'scale(' + getScaleFactor() + ')';
-                                    }
-                                }
-                            }, 0);
                         }
                     }
                 });
