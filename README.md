@@ -62,7 +62,9 @@ For questions or feedback, please open an issue in the GitHub repository.
 
 ## Screenshots
 
-![img.png](img.png)
+![img_2.png](img_2.png)
+
+![img_3.png](img_3.png)
 
 ## Live deployment
 
