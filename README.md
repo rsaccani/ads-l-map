@@ -15,7 +15,7 @@ The ADS-L Live Map project aims to provide real-time visibility into the global 
 ## Key features
 
 - Real-time Tracking: Monitor active ADS-L devices worldwide in real time
-- Historical Analytics: View monthly adoption trends through unique device counts
+- Historical Analytics: Professional charts displaying yearly totals and monthly trends of unique device counts
 - Detailed Information: Access comprehensive aircraft data including position, altitude, speed, and more
 - Interactive Interface: Zoomable map with dynamic marker scaling for better visualization
 - Device Identification: Cross-reference with OGN device database for aircraft model information
@@ -77,9 +77,10 @@ Visit: https://www.saccani.net/ads-l-real-time-monitoring/
 
 ## Metrics
 
-The application tracks:
-- Number of active devices in the last 60 minutes
-- Total unique devices observed per month
+The application tracks and visualizes:
+- Number of active devices in the last 60 minutes (displayed in real-time counter)
+- Total unique devices observed per year (displayed in bar chart)
+- Monthly unique device counts for the last 12 months (displayed in line chart with trend visualization)
 - Device distribution by type and region
 
 ## API Endpoints
@@ -95,7 +96,7 @@ The application tracks:
 
 ### `/ads-l/stats`
 **Method:** GET
-**Description:** Returns monthly statistics of unique devices
+**Description:** Returns monthly statistics of unique devices (displayed as interactive charts on the map page)
 
 ### `/device-map`
 **Method:** GET
