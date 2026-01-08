@@ -39,78 +39,92 @@
 </div>
 
 <script>
-    // Initialize map centered on Europe
-    var map = L.map('ads-l-map').setView([50, 10], 5);
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize map centered on Europe
+        var map = L.map('ads-l-map').setView([50, 10], 5);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
 
-    var markers = {};
-    var aircraftData = {}; // Store aircraft data separately
+        var markers = {};
+        var aircraftData = {}; // Store aircraft data separately
+        var aircraftTrails = {}; // Store trail data for each aircraft
+        var trailLayers = {}; // Store polyline layers for trails
 
-    // Function to calculate scale factor based on zoom
-    function getScaleFactor() {
-        var zoom = map.getZoom();
-        var baseZoom = 5;
-        var scaleFactor = Math.pow(1.1, zoom - baseZoom);
-        return Math.max(0.7, Math.min(1.4, scaleFactor));
-    }
+        // Function to calculate scale factor based on zoom
+        function getScaleFactor() {
+            var zoom = map.getZoom();
+            var baseZoom = 5;
+            var scaleFactor = Math.pow(1.1, zoom - baseZoom);
+            return Math.max(0.7, Math.min(1.4, scaleFactor));
+        }
 
-    // Function to create icon with current size and heading
-    function createIcon(heading) {
-        var baseSize = 32;
-        var scale = getScaleFactor();
-        var scaledSize = Math.round(baseSize * scale);
-        return L.divIcon({
-            html: `<svg fill="#000000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: ${scaledSize}px; height: ${scaledSize}px; transform: rotate(${heading}deg); display: block;"><path d="M50 5 L70 85 L50 75 L30 85 Z" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/></svg>`,
-            className: '',
-            iconSize: [scaledSize, scaledSize],
-            iconAnchor: [Math.round(scaledSize / 2), Math.round(scaledSize / 2)],
-            popupAnchor: [0, -Math.round(scaledSize / 2) - 5]
-        });
-    }
+        // Function to create icon with current size and heading
+        function createIcon(heading) {
+            var baseSize = 32;
+            var scale = getScaleFactor();
+            var scaledSize = Math.round(baseSize * scale);
+            return L.divIcon({
+                html: `<svg fill="#000000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="width: ${scaledSize}px; height: ${scaledSize}px; transform: rotate(${heading}deg); display: block;"><path d="M50 5 L70 85 L50 75 L30 85 Z" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/></svg>`,
+                className: '',
+                iconSize: [scaledSize, scaledSize],
+                iconAnchor: [Math.round(scaledSize / 2), Math.round(scaledSize / 2)],
+                popupAnchor: [0, -Math.round(scaledSize / 2) - 5]
+            });
+        }
 
-    // Function to update all marker sizes on zoom
-    function updateMarkerSizes() {
-        console.log('Updating marker scale for zoom:', map.getZoom());
+        // Function to update all marker sizes on zoom
+        function updateMarkerSizes() {
+            console.log('Updating marker scale for zoom:', map.getZoom());
 
-        for (var id in markers) {
-            if (aircraftData[id]) {
-                var marker = markers[id];
-                var heading = aircraftData[id].heading || 0;
+            for (var id in markers) {
+                if (aircraftData[id]) {
+                    var marker = markers[id];
+                    var heading = aircraftData[id].heading || 0;
 
-                // Recreate icon with new size based on current zoom
-                marker.setIcon(createIcon(heading));
+                    // Recreate icon with new size based on current zoom
+                    marker.setIcon(createIcon(heading));
+                }
             }
         }
-    }
 
-    function updateMap() {
-        fetch('/ads-l/')
-            .then(res => res.json())
-            .then(data => {
-                // Update aircraft counter
-                var activeCount = data.filter(d => d.lat && d.lon).length;
-                document.getElementById('aircraft-count').textContent = activeCount;
+        function updateMap() {
+            fetch('/ads-l/')
+                .then(res => res.json())
+                .then(data => {
+                    // Update aircraft counter
+                    var activeCount = data.filter(d => d.lat && d.lon).length;
+                    document.getElementById('aircraft-count').textContent = activeCount;
 
-                // Remove old markers
-                for (var id in markers) {
-                    if (!data.find(d => d.device_id === id)) {
-                        map.removeLayer(markers[id]);
-                        delete markers[id];
-                        delete aircraftData[id];
+                    // Remove old markers and trails
+                    for (var id in markers) {
+                        if (!data.find(d => d.device_id === id)) {
+                            map.removeLayer(markers[id]);
+                            delete markers[id];
+                            delete aircraftData[id];
+                            
+                            // Remove trail layer if it exists
+                            if (trailLayers[id]) {
+                                map.removeLayer(trailLayers[id]);
+                                delete trailLayers[id];
+                            }
+                            
+                            // Remove trail data
+                            if (aircraftTrails[id]) {
+                                delete aircraftTrails[id];
+                            }
+                        }
                     }
-                }
 
-                data.forEach(d => {
-                    if (d.lat && d.lon) {
-                        // Store aircraft data
-                        aircraftData[d.device_id] = d;
+                    data.forEach(d => {
+                        if (d.lat && d.lon) {
+                            // Store aircraft data
+                            aircraftData[d.device_id] = d;
 
-                        // Create popup content
-                        var popupContent = `
+                            // Create popup content
+                            var popupContent = `
               <b>Aircraft:</b> ${d.aircraft_type}<br>
               <b>Device ID:</b> ${d.device_id}<br>
               <b>Lat/Lon:</b> ${d.lat.toFixed(6)} / ${d.lon.toFixed(6)}<br>
@@ -124,32 +138,74 @@
               <div style="max-width:300px; white-space: pre-wrap; word-break: break-word;"><b>RAW APRS data:</b> ${d.raw || '-'}</div>
             `;
 
-                        if (markers[d.device_id]) {
-                            // Update existing marker
-                            markers[d.device_id]
-                                .setLatLng([d.lat, d.lon])
-                                .setIcon(createIcon(d.heading))
-                                .setPopupContent(popupContent);
-                        } else {
-                            // Add new marker
-                            markers[d.device_id] = L.marker([d.lat, d.lon], {icon: createIcon(d.heading)})
-                                .addTo(map)
-                                .bindPopup(popupContent);
+                            if (markers[d.device_id]) {
+                                // Update existing marker
+                                markers[d.device_id]
+                                    .setLatLng([d.lat, d.lon])
+                                    .setIcon(createIcon(d.heading))
+                                    .setPopupContent(popupContent);
+                            } else {
+                                // Add new marker
+                                markers[d.device_id] = L.marker([d.lat, d.lon], {icon: createIcon(d.heading)})
+                                    .addTo(map)
+                                    .bindPopup(popupContent);
+                            }
+                            
+                            // Update trail data - store last 10 positions
+                            if (!aircraftTrails[d.device_id]) {
+                                aircraftTrails[d.device_id] = [];
+                            }
+                            
+                            // Add current position to trail
+                            aircraftTrails[d.device_id].push({
+                                lat: d.lat,
+                                lon: d.lon
+                            });
+                            
+                            // Keep only the last 10 positions
+                            if (aircraftTrails[d.device_id].length > 10) {
+                                aircraftTrails[d.device_id].shift(); // Remove oldest position
+                            }
+                            
+                            // Debug: log trail information
+                            // console.log('Device ' + d.device_id + ': trail points = ' + aircraftTrails[d.device_id].length);
+                            
+                            // Update or create trail polyline (need at least 2 points to draw a line)
+                            if (aircraftTrails[d.device_id].length > 1) {
+                                // console.log('Creating/updating trail for ' + d.device_id);
+
+                                if (trailLayers[d.device_id]) {
+                                    // Update existing trail
+                                    var trailCoords = aircraftTrails[d.device_id].map(p => [p.lat, p.lon]);
+                                    trailLayers[d.device_id].setLatLngs([trailCoords]);
+                                    // console.log('Updated existing trail for ' + d.device_id);
+                                } else {
+                                    // Create new trail with black color
+                                    var trailCoords = aircraftTrails[d.device_id].map(p => [p.lat, p.lon]);
+                                    trailLayers[d.device_id] = L.polyline(trailCoords, {
+                                        color: '#000000',
+                                        weight: 2,
+                                        opacity: 0.6,
+                                        lineJoin: 'round',
+                                        lineCap: 'round'
+                                    }).addTo(map);
+                                }
+                            }
                         }
-                    }
-                });
-            })
-            .catch(err => console.error("ADS-L fetch error:", err));
-    }
+                    });
+                })
+                .catch(err => console.error("ADS-L fetch error:", err));
+        }
 
-    // Initial load
-    updateMap();
-    // Auto-update every 5 seconds
-    setInterval(updateMap, 5000);
+        // Initial load
+        updateMap();
+        // Auto-update every 5 seconds
+        setInterval(updateMap, 5000);
 
-    // Update marker sizes on zoom - THIS MAKES IT DYNAMIC
-    map.on('zoomend', function() {
-        updateMarkerSizes();
+        // Update marker sizes on zoom - THIS MAKES IT DYNAMIC
+        map.on('zoomend', function() {
+            updateMarkerSizes();
+        });
     });
 </script>
 
