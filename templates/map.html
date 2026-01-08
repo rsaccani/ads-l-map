@@ -153,32 +153,204 @@
     });
 </script>
 
-<h3>ADS-L monthly stats</h3>
-<table id="adsl-stats" border="1" style="border-collapse: collapse; width: 300px;">
-    <thead>
-    <tr>
-        <th>Month</th>
-        <th>Devices</th>
-    </tr>
-    </thead>
-    <tbody></tbody>
-</table>
+<h3 style="font-family: Arial, sans-serif; margin-top: 30px; margin-bottom: 20px;">ADS-L Statistics</h3>
+
+<div style="max-width: 1200px; margin: 0 auto;">
+    <!-- Yearly Chart -->
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h4 style="font-family: Arial, sans-serif; margin-top: 0; color: #333;">Unique Devices by Year</h4>
+        <canvas id="yearlyChart" style="max-height: 300px;"></canvas>
+    </div>
+
+    <!-- Monthly Chart -->
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h4 style="font-family: Arial, sans-serif; margin-top: 0; color: #333;">Monthly Unique Devices (Last 12 Months)</h4>
+        <canvas id="monthlyChart" style="max-height: 400px;"></canvas>
+    </div>
+</div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 
 <script>
     fetch('/ads-l/stats')
         .then(resp => resp.json())
         .then(data => {
-            const tbody = document.querySelector('#adsl-stats tbody');
-            tbody.innerHTML = '';
+            // Process data for yearly aggregation
+            const yearlyData = {};
             data.forEach(row => {
-                const tr = document.createElement('tr');
-                const monthTd = document.createElement('td');
-                monthTd.textContent = row.month;
-                const devicesTd = document.createElement('td');
-                devicesTd.textContent = row.devices;
-                tr.appendChild(monthTd);
-                tr.appendChild(devicesTd);
-                tbody.appendChild(tr);
+                const year = row.month.substring(0, 4);
+                if (!yearlyData[year]) {
+                    yearlyData[year] = new Set();
+                }
+                // Note: This counts unique devices per year based on available monthly data
+                // For accurate yearly totals, we'd need device IDs, but we'll show sum of monthly uniques
+                if (!yearlyData[year + '_total']) {
+                    yearlyData[year + '_total'] = 0;
+                }
+                yearlyData[year + '_total'] += row.devices;
+            });
+
+            // Prepare yearly chart data
+            const years = Object.keys(yearlyData).filter(k => !k.includes('_total')).sort();
+            const yearlyTotals = years.map(year => yearlyData[year + '_total']);
+
+            // Create Yearly Chart
+            const yearlyCtx = document.getElementById('yearlyChart').getContext('2d');
+            new Chart(yearlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: years,
+                    datasets: [{
+                        label: 'Unique Devices',
+                        data: yearlyTotals,
+                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Unique Devices: ' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#333',
+                            font: {
+                                weight: 'bold',
+                                size: 14
+                            },
+                            formatter: function(value) {
+                                return value.toLocaleString();
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                font: { size: 12 },
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+
+            // Prepare monthly chart data (last 12 months)
+            const monthlyLabels = data.map(row => row.month);
+            const monthlyValues = data.map(row => row.devices);
+
+            // Create Monthly Chart
+            const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+            new Chart(monthlyCtx, {
+                type: 'line',
+                data: {
+                    labels: monthlyLabels,
+                    datasets: [{
+                        label: 'Unique Devices',
+                        data: monthlyValues,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Unique Devices: ' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            offset: 4,
+                            color: '#333',
+                            font: {
+                                weight: 'bold',
+                                size: 11
+                            },
+                            formatter: function(value) {
+                                return value.toLocaleString();
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                font: { size: 12 },
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: { size: 11 },
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
             });
         })
         .catch(err => console.error(err));
