@@ -19,6 +19,8 @@ The ADS-L Live Map project aims to provide real-time visibility into the global 
 - Detailed Information: Access comprehensive aircraft data including position, altitude, speed, and more
 - Interactive Interface: Zoomable map with dynamic marker scaling for better visualization
 - Device Identification: Cross-reference with OGN device database for aircraft model information
+- Flight Path Visualization: View the last 10 positions of each aircraft as black trails showing their flight path
+
 
 ## Data sources
 
@@ -84,6 +86,8 @@ The application tracks and visualizes:
 - Total unique devices observed per year (displayed in bar chart)
 - Monthly unique device counts for the last 12 months (displayed in line chart with trend visualization)
 - Device distribution by type and region
+- Flight paths: Black trails showing the last 10 positions of each aircraft
+
 
 ## API Endpoints
 
