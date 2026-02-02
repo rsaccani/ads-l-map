@@ -250,7 +250,7 @@ def ads_l_listener():
     while True:
         try:
             s = connect_ogn()
-            s.settimeout(30)
+            s.settimeout(60)
             buffer = ""
             last_rx = time.time()
 
