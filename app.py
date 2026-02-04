@@ -27,20 +27,14 @@ ads_l_devices = {}
 
 app = Flask(__name__)
 
-# Configure logging to flush immediately
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s: %(message)s',
-    stream=sys.stdout,
-    force=True
-)
-logger = logging.getLogger(__name__)
-
-# Create a separate logger for the main application
+# Configure logging to flush immediately - use only one handler
 main_logger = logging.getLogger('main')
-main_logger.setLevel(logging.INFO)
 
-# Ensure logs are flushed immediately
+# Clear any existing handlers first to prevent duplication
+main_logger.handlers.clear()
+
+# Set log level and configure single handler
+main_logger.setLevel(logging.INFO)
 handler = logging.StreamHandler(sys.stdout)
 handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
 main_logger.addHandler(handler)
@@ -263,7 +257,7 @@ def parse_aprs_line(line):
             "raw": line
         }
     except Exception as e:
-        logging.error("parse_aprs_line failed: %s", e)
+        main_logger.error("parse_aprs_line failed: %s", e)
         return None
 
 
@@ -291,8 +285,8 @@ def ads_l_listener():
                         continue
                     if '>OGADSL' in line:
                         pkt = parse_aprs_line(line)
-                        logging.warning("[RAW] %s", line)
-                        logging.warning("[PARSED] %s", pkt)
+                        main_logger.debug("[RAW] %s", line)
+                        main_logger.debug("[PARSED] %s", pkt)
                         if pkt and pkt["lat"] is not None and pkt["lon"] is not None:
                             ads_l_devices[pkt["device_id"]] = pkt
                             record_monthly_device(
@@ -300,7 +294,7 @@ def ads_l_listener():
                                 "ADSL"  # ADSL / ADSB / FLARM
                             )
                     else:
-                        logging.debug("[RAW] %s", line)
+                        main_logger.debug("[RAW] %s", line)
                 if time.time() - last_rx > 60:
                     raise ConnectionError("OGN feed stalled")
 
