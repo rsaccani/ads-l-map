@@ -102,7 +102,7 @@ def get_db_connection(max_retries=30, retry_delay=10):
         return None
     retries = 0
     while retries < max_retries:
-        print("Attempting to connect to db.")
+        main_logger.info("Attempting to connect to db.")
         try:
             conn = pymysql.connect(
                 host="localhost",
@@ -111,13 +111,13 @@ def get_db_connection(max_retries=30, retry_delay=10):
                 database="ads_l",
                 autocommit=True
             )
-            print("Connection to database established.")
+            main_logger.info("Connection to database established.")
             return conn
         except pymysql.MySQLError as e:
             retries += 1
-            print(f"Error connecting database (attempt {retries}/{max_retries}): {e}")
+            main_logger.error(f"Error connecting database (attempt {retries}/{max_retries}): {e}")
             if retries < max_retries:
-                print(f"New attempt in {retry_delay} seconds...")
+                main_logger.info(f"New attempt in {retry_delay} seconds...")
                 time.sleep(retry_delay)
     raise Exception("Cannot connect to database after many attempts.")
 
@@ -142,13 +142,13 @@ def record_monthly_device(device_id, device_type):
                     )
                 break  # Se tutto va bene, esci dal loop
         except pymysql.MySQLError as e:
-            print(f"Error writing to database (attempt {attempt + 1}/{max_retries}): {e}")
+            main_logger.error(f"Error writing to database (attempt {attempt + 1}/{max_retries}): {e}")
             if attempt < max_retries - 1:
-                print(f"Will retry connecting in {retry_delay} second...")
+                main_logger.info(f"Will retry connecting in {retry_delay} second...")
                 time.sleep(retry_delay)
                 conn = get_db_connection()  # Riconnetti al database
             else:
-                print("Cannot write to database after many attempts.")
+                main_logger.error("Cannot write to database after many attempts.")
 
 
 
@@ -356,22 +356,22 @@ def prune_old_devices():
 def close_db(exception):
     global conn
     if conn is not None:
-        print("Closing DB")
+        main_logger.info("Closing DB")
         try:
             # Only close if there's no active transaction
             if not conn.in_transaction():
                 conn.close()
         except Exception as e:
-            print(f"Error closing database connection: {e}")
+            main_logger.error(f"Error closing database connection: {e}")
         finally:
             conn = None
 
 def start_listener():
     """Start the APRS listener in a background thread."""
-    print("Starting APRS listener thread...")
+    main_logger.info("Starting APRS listener thread...")
     listener_thread = Thread(target=ads_l_listener, daemon=True)
     listener_thread.start()
-    print(f"Listener thread started with ID: {listener_thread.ident}")
+    main_logger.info(f"Listener thread started with ID: {listener_thread.ident}")
     return listener_thread
 
 # --- ROUTES FLASK ---
@@ -392,7 +392,7 @@ def get_ads_l():
 def ads_l_stats():
     global conn
     if conn is None:
-        print("No database connection")
+        main_logger.warning("No database connection")
         return '[]'
     with conn.cursor(pymysql.cursors.DictCursor) as cur:
         # count unique monthly devices
