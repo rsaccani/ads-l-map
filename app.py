@@ -4,6 +4,7 @@ import time
 import datetime
 import re
 import logging
+import sys
 from flask import Flask, jsonify, render_template
 from threading import Thread
 import pymysql
@@ -25,7 +26,28 @@ SKIP_STATS_DATABASE = False
 ads_l_devices = {}
 
 app = Flask(__name__)
-logging.basicConfig(level=logging.ERROR)
+
+# Configure logging to flush immediately
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s',
+    stream=sys.stdout,
+    force=True
+)
+logger = logging.getLogger(__name__)
+
+# Create a separate logger for the main application
+main_logger = logging.getLogger('main')
+main_logger.setLevel(logging.INFO)
+
+# Ensure logs are flushed immediately
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
+main_logger.addHandler(handler)
+
+# Set the root logger to ERROR level to suppress RAW/PARSED messages
+logging.getLogger().setLevel(logging.ERROR)
+
 listener_started = False
 
 # Database connection for statistics
@@ -143,7 +165,7 @@ def connect_ogn():
     s.connect((HOST, PORT))
     login_line = f"user ADSLMAP-1 pass -1 vers ADS-L webmap 1.0 filter r/0/0/20000\n"
     s.send(login_line.encode())
-    print("OGN connection established")
+    main_logger.info("OGN connection established")
     return s
 
 
@@ -283,12 +305,14 @@ def ads_l_listener():
                     raise ConnectionError("OGN feed stalled")
 
         except (socket.timeout, ConnectionError) as e:
-            print("Connetion error:", e)
+            main_logger.error(f"Connection error: {e}")
             try:
                 s.close()
             except:
                 pass
+            main_logger.info(f"Waiting 5 seconds before reconnecting...")
             time.sleep(5)
+            main_logger.info(f"Attempting to reconnect...")
             continue
 
 
@@ -308,10 +332,10 @@ def update_device_type_map():
             new_map[device_id] = aircraft_model + " (" + registration + ")" if aircraft_model else "Unknown"
 
         device_type_map = new_map
-        print(f"[Device map] Loaded {len(device_type_map)} entries")
+        main_logger.info(f"[Device map] Loaded {len(device_type_map)} entries")
 
     except Exception as e:
-        print("Error updating device type map:", e)
+        main_logger.error(f"Error updating device type map: {e}")
 
 def periodic_device_type_update(interval=3600):
     """Update the device type map every interval seconds."""
@@ -392,7 +416,7 @@ def bootstrap():
     if listener_started:
         return
 
-    print("Bootstrapping ADS-L listener")
+    main_logger.info("Bootstrapping ADS-L listener")
 
     conn = get_db_connection()
 
