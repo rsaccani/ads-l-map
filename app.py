@@ -266,14 +266,14 @@ def ads_l_listener():
     while True:
         try:
             s = connect_ogn()
-            s.settimeout(60)
+            s.settimeout(300)
             buffer = ""
             last_rx = time.time()
 
             while True:
                 data = s.recv(4096)
                 if not data:
-                    raise ConnectionError("No data from OGN for 60s")
+                    raise ConnectionError("No data from OGN for 300s")
 
                 last_rx = time.time()
                 buffer += data.decode(errors="ignore")
@@ -295,7 +295,7 @@ def ads_l_listener():
                             )
                     else:
                         main_logger.debug("[RAW] %s", line)
-                if time.time() - last_rx > 60:
+                if time.time() - last_rx > 300:
                     raise ConnectionError("OGN feed stalled")
 
         except (socket.timeout, ConnectionError) as e:
