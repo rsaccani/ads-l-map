@@ -325,8 +325,10 @@
             });
 
             // Prepare monthly chart data (last 12 months)
-            const monthlyLabels = data.map(row => row.month);
-            const monthlyValues = data.map(row => row.devices);
+            // Reverse the data to show chronological order (oldest to newest)
+            const reversedData = [...data].reverse();
+            const monthlyLabels = reversedData.map(row => row.month);
+            const monthlyValues = reversedData.map(row => row.devices);
 
             // Create Monthly Chart
             const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
