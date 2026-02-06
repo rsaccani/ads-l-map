@@ -269,6 +269,7 @@ def ads_l_listener():
             s.settimeout(300)
             buffer = ""
             last_rx = time.time()
+            last_keepalive = time.time()
 
             while True:
                 data = s.recv(4096)
@@ -295,6 +296,16 @@ def ads_l_listener():
                             )
                     else:
                         main_logger.debug("[RAW] %s", line)
+                
+                # Send keepalive message every 15 minutes to prevent server timeout
+                if time.time() - last_keepalive > 900:  # 900 seconds = 15 minutes
+                    try:
+                        keepalive_msg = "# keepalive\n"
+                        s.send(keepalive_msg.encode())
+                        last_keepalive = time.time()
+                    except Exception as e:
+                        main_logger.error(f"Failed to send keepalive: {e}")
+                
                 if time.time() - last_rx > 300:
                     raise ConnectionError("OGN feed stalled")
 

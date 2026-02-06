@@ -56,6 +56,8 @@ The application follows a microservice-like architecture with:
 ### Key Processes:
 
 1. **OGN Feed Connection**: Maintains persistent TCP connection to aprs.glidernet.org:14580 with automatic reconnection every 5 seconds if connection fails
+   - Implements periodic keepalive messages every 15 minutes to prevent server timeout
+   - Sends "# keepalive" messages to maintain connection stability
 
 2. **Device Management**: 
    - Active devices stored in memory with timestamp
@@ -110,6 +112,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
    - Verify port 14580 is not blocked by firewall
    - Test connection: `telnet aprs.glidernet.org 14580`
    - System automatically retries connection every 5 seconds
+   - Look for "Sent keepalive message to OGN server" in logs to verify keepalive functionality
 
 3. **No devices displayed**:
    - Verify listener is running (check logs for "OGN connection established")
