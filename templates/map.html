@@ -218,11 +218,7 @@
         <canvas id="monthlyChart" style="max-height: 400px;"></canvas>
     </div>
 
-    <!-- Yearly Chart -->
-    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
-        <h4 style="font-family: Arial, sans-serif; margin-top: 0; color: #333;">Unique Devices by Year</h4>
-        <canvas id="yearlyChart" style="max-height: 300px;"></canvas>
-    </div>
+
 </div>
 
 <!-- Chart.js Library -->
@@ -233,97 +229,6 @@
     fetch('/ads-l/stats')
         .then(resp => resp.json())
         .then(data => {
-            // Process data for yearly aggregation
-            const yearlyData = {};
-            data.forEach(row => {
-                const year = row.month.substring(0, 4);
-                if (!yearlyData[year]) {
-                    yearlyData[year] = new Set();
-                }
-                // Note: This counts unique devices per year based on available monthly data
-                // For accurate yearly totals, we'd need device IDs, but we'll show sum of monthly uniques
-                if (!yearlyData[year + '_total']) {
-                    yearlyData[year + '_total'] = 0;
-                }
-                yearlyData[year + '_total'] += row.devices;
-            });
-
-            // Prepare yearly chart data
-            const years = Object.keys(yearlyData).filter(k => !k.includes('_total')).sort();
-            const yearlyTotals = years.map(year => yearlyData[year + '_total']);
-
-            // Create Yearly Chart
-            const yearlyCtx = document.getElementById('yearlyChart').getContext('2d');
-            new Chart(yearlyCtx, {
-                type: 'bar',
-                data: {
-                    labels: years,
-                    datasets: [{
-                        label: 'Unique Devices',
-                        data: yearlyTotals,
-                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 2,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            padding: 12,
-                            titleFont: { size: 14, weight: 'bold' },
-                            bodyFont: { size: 13 },
-                            callbacks: {
-                                label: function(context) {
-                                    return 'Unique Devices: ' + context.parsed.y.toLocaleString();
-                                }
-                            }
-                        },
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            color: '#333',
-                            font: {
-                                weight: 'bold',
-                                size: 14
-                            },
-                            formatter: function(value) {
-                                return value.toLocaleString();
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                font: { size: 12 },
-                                callback: function(value) {
-                                    return value.toLocaleString();
-                                }
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                font: { size: 12, weight: 'bold' }
-                            },
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                },
-                plugins: [ChartDataLabels]
-            });
-
             // Prepare monthly chart data (last 12 months)
             // Reverse the data to show chronological order (oldest to newest)
             const reversedData = [...data].reverse();

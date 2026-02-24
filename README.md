@@ -34,7 +34,6 @@ The ADS-L Live Map project aims to provide real-time visibility into the global 
 ### Statistics Dashboard:
 
 - **Monthly Chart**: Line chart showing unique devices per month for the last 12 months
-- **Yearly Chart**: Bar chart showing total unique devices by year
 - **Interactive Tooltips**: Detailed information on hover
 - **Data Labels**: Clear value displays on each data point
 
@@ -177,7 +176,6 @@ Visit: https://www.saccani.net/ads-l-real-time-monitoring/
 
 The application tracks and visualizes:
 - Number of active devices in the last 60 minutes (displayed in real-time counter)
-- Total unique devices observed per year (displayed in bar chart)
 - Monthly unique device counts for the last 12 months (displayed in line chart with trend visualization)
 - Device distribution by type and region
 - Flight paths: Black trails showing the last 10 positions of each aircraft
